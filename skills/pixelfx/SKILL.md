@@ -102,9 +102,13 @@ Then:
    direction is open, write 3 to 5 genuinely different drafts (`<name>-a.js` .. `-e.js`), render them all
    (`node tools/render.mjs "<category>/<name>-*"`) and look at every contact sheet before choosing. Show the user
    the strongest two or three if they're around (`--gif` makes animations to share).
-4. **Look, judge, fix.** Render, open `records/<id>/contact.png`, and judge like a picky pixel artist. Fix the
-   worst thing, render again. Three rounds minimum; a showpiece takes more. `--all` shows every frame,
-   `--mp4` shows motion at full speed.
+4. **Look, judge, fix.** `node tools/inspect.mjs <id>` renders every frame on a flat ground at 1x and zoomed,
+   with a transparent view and the change per frame printed: judge from that, not from a contact sheet, which
+   samples frames and hides sliding. A "held" stretch that was not deliberate, or a row of identical change
+   values, is the signature of stiffness. For loops and critters, describe the motion as key drawings on a
+   timeline with `track` from `src/core` (see "Hand-drawn motion" in `docs/AUTHORING.md`), not as a formula of
+   `t`: holds and snaps are what make it look hand-timed. Fix the worst thing, render again. Three rounds minimum;
+   a showpiece takes more. `--mp4` shows motion at full speed.
 5. **Act it out** if a character is involved: add `export const act` (see "Acts" in `docs/AUTHORING.md`), with a wind-up before t = 0,
    a pose change on the release frame, a freeze on contact and a recovery. `node tools/act.mjs <id>` shows consecutive 12 fps steps:
    judge motion from those and from `--mp4`, not from a contact sheet's samples.

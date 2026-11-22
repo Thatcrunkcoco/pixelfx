@@ -195,6 +195,51 @@ What makes Sprite Fusion's effects good, and what every effect here must do:
    Hugo's effects wholesale: use his techniques, make the design your own.
 10. **Clean.** Fits its canvas, ends empty or loops clean, deterministic, under 2 ms a frame (`tools/check.mjs`).
 
+## Hand-drawn motion (`src/core/track.js`)
+
+A smooth formula sampled every frame *slides*: every frame moves a little, and the eye reads it as mechanical. Hand
+animation holds a drawing, then snaps to the next one. For loops and critters, describe the motion as **key drawings
+on a timeline** instead of a function of `t`:
+
+```js
+import { track } from "../../core/index.js";
+
+// each key is one drawing; "how" says how it arrives from the one before
+const WING = track({
+  loop: 2.4,               // repeats over the loop, and t = duration must match t = 0
+  rate: 0,                 // 12 steps the values at 12 fps (limbs in whole drawings); 0 interpolates every frame
+  keys: [
+    [0.00, { tip: 0.0, bow: 0.0 }],
+    [0.30, { tip: 0.0, bow: 0.0 }],                 // held: the beat hangs
+    [0.42, { tip: 0.5, bow: 0.0 }, "out"],          // strike: fast off the hold, settling
+    [0.56, { tip: 1.0, bow: 0.3 }, "snap"],         // contact: a drawing, not a curve between two
+    [0.70, { tip: 0.7, bow: -0.1 }, "out"],
+    [1.50, { tip: 0.9, bow: -0.2 }],                // glide, held
+    [2.40, { tip: 0.0, bow: 0.0 }],
+  ],
+});
+const pose = WING(t);   // numbers interpolate; colours and flags switch at the key
+```
+
+`how`: default eases in and out, `"out"` arrives fast and settles (a strike), `"in"` starts slow (a wind-up),
+`"line"` is constant, `"snap"` holds the previous drawing and jumps on the key, and any name from `ease` works.
+
+What to look for, and the fix:
+
+| you see | fix |
+|---|---|
+| every frame moves the same amount: sliding, not animating | put keys on a timeline with a hold, and arrive `"out"` or `"snap"` |
+| a pose that should be a drawing eases into being | mark it `"snap"` |
+| a beat is over before it registers | hold the extreme for 2 to 5 frames |
+| everything moves on every frame | give the body its own, slower key track so the parts are not synchronised |
+
+**Smears** (`src/core/smear.js`): on a fast move, draw one stretched shape spanning where the thing was and where it
+is (`smearOutline(was, now, { samples, lag })`), not several translucent copies. Copies read as ghosting; a single
+swept shape reads as speed.
+
+**Judge motion from `tools/inspect.mjs`**, not from a contact sheet: it prints how much changed frame to frame, so
+"stiff" becomes visible as a row of identical numbers, and a hold or a jump is named rather than guessed at.
+
 ## The method
 
 The method is Hugo Duprez's ([How to make (good) pixel art effects with
@@ -204,8 +249,8 @@ your eyes, feed your references.
 1. **Reference first.** Find the closest of [his effects](https://www.spritefusion.com/pixel-art-vfx), look at it, and
    read its source for the choreography and numbers. His code uses world units, 2 per pixel.
 2. **Say it in one line** with the art direction, then draft.
-3. **Render and look**: `node tools/render.mjs <id> --zoom 3` (contact sheet in `records/<id>/contact.png`;
-   `--all` every frame, `--mp4` motion).
+3. **Render and look**: `node tools/inspect.mjs <id>` every frame on a flat ground with the change per frame
+   printed, then `node tools/render.mjs <id> --mp4` for motion. A contact sheet samples frames; motion needs all of them.
 4. **Benchmark**: put his and yours next to each other at the same height on screen. If his has more detail, light
    or life, yours isn't done.
 5. **Fix the worst thing, render again.** Three rounds minimum; showpieces take more.

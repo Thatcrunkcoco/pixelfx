@@ -2,3 +2,6 @@ node_modules/
 dist/
 sheets/
 .DS_Store
+
+# follow-on review output from tools/inspect.mjs: scratch, not assets
+records/**/inspect/
