@@ -183,15 +183,29 @@ bar. `node tools/serve.mjs` runs the gallery locally with your effects in it.
 
 The gallery is the best way to *watch* an effect: it runs the real code at your display's rate, which is what a game
 does, where a GIF is a lossy snapshot of it. Open one and the **frame** row scrubs to any frame and steps one at a
-time, so a bad in-between is a five-second check. To see a change beside the version it came from, pass a commit:
+time, so a bad in-between is a five-second check.
+
+To watch it without starting a server, build the gallery into one self-contained file:
+
+```
+npm run preview                        # writes pixelfx-preview.html and opens it
+npm run preview -- --against=1bfc00c   # the same, compared beside that commit
+```
+
+Everything is inlined, so the file opens straight from disk: no localhost, no ports, no network. It is a snapshot of
+`src/` as it was when you ran it, and prints a hash of what went in, so a stale preview is obvious — rebuilding takes
+under a second, so re-run it after each edit. Pass `--against=<commit>` and the old version is baked in beside yours,
+each with its own copy of `src/core`, so the two panes are genuinely two versions. `--no-open` builds without opening.
+
+If you'd rather have live reloading while you edit, `node tools/serve.mjs` runs the gallery as a real server:
 
 ```
 node tools/serve.mjs
 open http://localhost:8080/gallery/?against=a841596
 ```
 
-The left pane is your working tree, the right is that commit's `src/`, and both run from one clock. Nothing is
-checked out or stashed: the server reads the old files out of git. Use any commit hash, branch or tag.
+Either way the left pane is your working tree, the right is that commit's `src/`, and both run from one clock. Nothing
+is checked out or stashed. Use any commit hash, branch or tag.
 
 ## publish it on patch.
 

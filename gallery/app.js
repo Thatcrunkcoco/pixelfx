@@ -243,14 +243,25 @@ function wireScrub() {
 let scrub = null;
 
 /**
- * The other half of a comparison: the same effect loaded from src/ as it was at AGAINST. Modules come from
- * /baseline/<hash>/ with their own instance of src/core, so the two graphs never share a module and the panes
- * really are two different versions.
+ * The other half of a comparison: the same effect loaded from src/ as it was at AGAINST.
+ *
+ * There are two ways to get it, so the gallery works both served and as a single file:
+ *   - `tools/serve.mjs` serves /baseline/<hash>/ live from git, read at runtime.
+ *   - `tools/preview.mjs` builds one HTML file with no server, so the baseline is baked in ahead of time as
+ *     window.PIXELFX_BASELINE[hash][id].
+ * Either way the old modules carry their own instance of src/core, so the two graphs never share a module and the
+ * panes really are two different versions rather than one version drawn twice.
  */
 async function loadAgainst(fx) {
-  const url = `/baseline/${encodeURIComponent(AGAINST)}/src/fx/${fx.id}.js`;
-  const mod = await import(url);
-  // the same wrapper the gallery builds for its own effects, with the old commit's meta and defaults filled in
+  // the baked registry is keyed by the full commit it was built from, but the URL may name it short
+  const baked = Object.entries(globalThis.PIXELFX_BASELINE ?? {}).find(([ref]) => ref.startsWith(AGAINST))?.[1]?.[fx.id];
+  if (baked) return wrapAgainst(fx, baked);
+  if (globalThis.PIXELFX_BASELINE) throw new Error(`this preview was built without ${fx.id} from ${AGAINST}`);
+  return wrapAgainst(fx, await import(`/baseline/${encodeURIComponent(AGAINST)}/src/fx/${fx.id}.js`));
+}
+
+// the same wrapper the gallery builds for its own effects, with the old commit's meta and defaults filled in
+function wrapAgainst(fx, mod) {
   const meta = { fps: 30, bg: "dark", loop: false, duration: 1, tags: [], options: {}, ...mod.meta };
   return { id: fx.id, cat: fx.cat, name: meta.name, mod: { ...mod, meta }, meta };
 }
