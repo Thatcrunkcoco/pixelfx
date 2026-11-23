@@ -5,3 +5,6 @@ sheets/
 
 # follow-on review output from tools/inspect.mjs: scratch, not assets
 records/**/inspect/
+
+# the single-file gallery from tools/preview.mjs: a build artifact, regenerated on demand
+pixelfx-preview.html
