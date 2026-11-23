@@ -2,6 +2,7 @@
 
 export const categories = [
   { id: "moves", name: "moves", blurb: "whole attacks, wind-up to recovery, chained from the effects below" },
+  { id: "movement", name: "movement", blurb: "sliding, dashing, jumping, rolling: the basics of getting around" },
   { id: "fire", name: "fire", blurb: "torches, breath, pillars, walls of flame" },
   { id: "explosions", name: "explosions", blurb: "blasts, smoke, fireworks, mushroom clouds" },
   { id: "water", name: "water", blurb: "splashes, falls, fountains, waves" },

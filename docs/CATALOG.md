@@ -1,6 +1,6 @@
 # Catalog
 
-244 effects in 21 categories. Every one is a file in
+245 effects in 22 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## moves
@@ -21,6 +21,14 @@ whole attacks, wind-up to recovery, chained from the effects below.
 | Pistol shots | `moves/pistol-shots` | one-shot 2.6s | 378×76 | Three aimed shots: the gun kicks up each time and settles, tracers cross the floor, and the target staggers under each hit. |
 | Rocket launcher | `moves/rocket-launcher` | one-shot 6.56s | 480×244 | He drops to one knee, shoulders the tube and fires: the kick shoves him back along the floor, the rocket crawls out on its jet and the target goes up. |
 | Sword combo | `moves/sword-combo` | one-shot 2.98s | 264×150 | Three strokes walking forward: a slash, a crossing double cut, and a two-handed cleave into the floor that throws the target about. |
+
+## movement
+
+sliding, dashing, jumping, rolling: the basics of getting around.
+
+| effect | id | | size | what it does |
+|---|---|---|---|---|
+| Slide | `movement/slide` | one-shot 1.62s | 372×116 | He coils, throws himself flat and skids on his trailing boot: the ground tears past in streaks, dust sprays back in a wedge, and the skid leaves scuffs he climbs out of. |
 
 ## fire
 

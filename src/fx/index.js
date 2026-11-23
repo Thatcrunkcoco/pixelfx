@@ -12,6 +12,7 @@ import * as moves_meteor_call from "./moves/meteor-call.js";
 import * as moves_pistol_shots from "./moves/pistol-shots.js";
 import * as moves_rocket_launcher from "./moves/rocket-launcher.js";
 import * as moves_sword_combo from "./moves/sword-combo.js";
+import * as movement_slide from "./movement/slide.js";
 import * as fire_brazier from "./fire/brazier.js";
 import * as fire_campfire from "./fire/campfire.js";
 import * as fire_candle from "./fire/candle.js";
@@ -260,6 +261,7 @@ export const effects = {
   "moves/pistol-shots": moves_pistol_shots,
   "moves/rocket-launcher": moves_rocket_launcher,
   "moves/sword-combo": moves_sword_combo,
+  "movement/slide": movement_slide,
   "fire/brazier": fire_brazier,
   "fire/campfire": fire_campfire,
   "fire/candle": fire_candle,
