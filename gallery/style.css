@@ -139,18 +139,21 @@ main { max-width: 1240px; margin: 0 auto; }
   min-height: 100%;
   padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 28px;
+  /* one layout for both modes: the stage takes the whole width and the info sits below it, so a single pane and a
+     compared pair look the same and the art is never squeezed into a column beside a sidebar */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
   align-content: start;
 }
+.sheet .info { max-width: 760px; }
 .sheet .big { background: var(--stage); aspect-ratio: 16 / 10; position: relative; }
-/* A/B: the two stages sit side by side, each labelled, sharing one clock */
+/* A/B: the two stages sit side by side, each labelled, sharing one clock. On its own the row holds one pane, set to
+   the width it has when compared and centred, so the art is exactly the same size in both modes and a change you
+   spot on one side lines up with the other. */
 .sheet .compare-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
-/* when comparing, the two stages take the whole width and the info moves below them. The class is on the dialog,
-   so it has to be matched through it, not on .sheet itself. */
-.detail.comparing .sheet { grid-template-columns: minmax(0, 1fr); }
-.detail.comparing .sheet .compare-col { grid-column: 1 / -1; }
-.detail.comparing .sheet .info { max-width: 760px; }
+.detail:not(.comparing) .sheet .compare-col { grid-template-columns: minmax(0, 1fr); }
+/* a single pane is centred at exactly the width a compared pair gives it: half the row, minus half the gap */
+.detail:not(.comparing) .sheet .compare-col > div:first-child { width: calc(50% - 5px); justify-self: center; }
 @media (max-width: 860px) {
   .sheet .compare-col { grid-template-columns: 1fr; }
 }
