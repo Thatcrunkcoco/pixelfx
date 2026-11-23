@@ -1,16 +1,16 @@
-// He thumbs a playing card out of the deck at his hip, lets it hang in his fingers while the purple aura pours
-// into it, then flicks it across the room. The card spins as it flies, trailing violet light, and the moment it
-// touches the dummy it detonates: the arcane release inside pops out in a flash of rings and runes, and the straw
-// man takes the hit. A beginning (the draw and the infusion), a middle (the flight) and an end (the blast).
-import { Rng, clamp, ease, fit, lerp, TAU, WHITE, READY, PAL, chain } from "../../core/index.js";
+// He thumbs a playing card out of the deck at his hip — its patterned back to you as the purple aura pours
+// into it — then flicks it off flat with a snap of the wrist. The card glides level across the room, tumbling
+// face over edge like a frisbee, trailed by violet light, and the moment it touches the dummy the charge goes
+// off in a burst of purple plasma, and the straw takes it.
+import { Rng, clamp, fit, TAU, WHITE, hex, READY, PAL, chain } from "../../core/index.js";
 import * as blast from "../explosions/plasma-explosion.js";
 
-const THROW = 1.0, FLY = 0.5, HIT = THROW + FLY, D = HIT + 3.2, SPEED = 330, TX = 190, CY = -22;
+const THROW = 1.0, FLY = 0.5, HIT = THROW + FLY, D = HIT + 3.2, SPEED = 330, TX = 190, CY = -24;
 
 export const meta = {
   name: "Card throw",
-  desc: "He thumbs out a playing card, the purple aura pours into it, and he flicks it spinning across the room; it detonates on the straw in a burst of purple plasma.",
-  tags: ["move", "arcane", "card", "projectile", "explosion", "one-shot"],
+  desc: "He thumbs out a playing card, the purple aura pours into its patterned back, and he flicks it tumbling flat across the room; it detonates on the straw in a burst of purple plasma.",
+  tags: ["move", "arcane", "card", "deck", "projectile", "explosion", "one-shot"],
   size: [356, 260],
   origin: [64, 214],
   duration: D,
@@ -18,13 +18,15 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { seed: 1, palette: PAL.arcane },
+  options: { seed: 1 },
 };
 
-// ---- the flying card: a tiny spinning ace wearing an aura of purple light. Drawn face-on with a horizontal
-// squash for the spin (the pixel-art way), a diamond pip when the face shows, and a glowless edge line.
-const CARD = { w: 9, h: 12 };
-const spinCard = {
+// ---- the card itself: the back of a playing card — the one thing everyone recognises — paper white rimmed in
+// ink with a red patterned field. While the aura pours in, it's held upright like a hand of cards shows it; in
+// flight it lies flat and tumbles over a couple of times like a frisbee. The suit doesn't matter: just the read.
+const INK = hex("#262a36"), RED = hex("#c03343"), PAPER = hex("#eef0e4"), EDGE = hex("#3a3040");
+// the card: a tiny ace wearing an aura of purple light, with its own slot in the chain
+export const spinCard = {
   meta: { name: "card", duration: 4, loop: false, fps: 30, bg: "ground", size: [96, 64], origin: [48, 32], options: { palette: PAL.arcane, spin: 26, hold: 0 } },
   create(o) {
     const R = new Rng(o.seed), C = fit(o.palette, 8);
@@ -32,9 +34,9 @@ const spinCard = {
     const hold = o.hold, span = hold > 0 ? hold : 0.5, spin = o.spin;
     let t = 0;
     const trail = [];
-    const drawn = () => { // aura strength: pours in over the hold, held at full in flight
+    const charged = () => {
       const u = clamp(t / span);
-      return hold > 0 ? u * u : Math.min(1, 0.75 + u * 0.25);
+      return hold > 0 ? u * u : Math.min(1, 0.8 + u * 0.2);
     };
     return {
       update(dt) {
@@ -45,10 +47,10 @@ const spinCard = {
       done() { return t > 4.5; },
       draw(p, layer) {
         if (layer === "back") return;
-        const a = drawn();
-        // the trail: purple motes sloughing off behind the card (flight only — they'd pool in the hand)
+        const a = charged();
+        // the trail: violet particles riding off the back of the card while it cuts the air
         if (hold === 0 && t > 0.05) {
-          trail.push({ x: R.range(-2, 2), y: R.range(-3, 3) + t * 0.5, vx: R.range(-26, -58), vy: R.range(-9, 13), age: 0, life: R.range(0.3, 0.55), c: R.chance(0.68) ? VIO[1] : VIO[2] });
+          trail.push({ x: R.range(-2, 2), y: R.range(-3, 3) + t * 0.4, vx: R.range(-26, -58), vy: R.range(-9, 13), age: 0, life: R.range(0.3, 0.55), c: R.chance(0.68) ? VIO[1] : VIO[2] });
           trail.push({ x: R.range(-2, 2), y: R.range(-2, 2), vx: R.range(-40, -90), vy: R.range(-16, 6), age: 0, life: R.range(0.2, 0.4), c: VIO[0] });
         }
         for (const m of trail) {
@@ -57,27 +59,32 @@ const spinCard = {
           if (k > 0.5) p.dot(m.x * 0.92, m.y * 0.92, VIO[0], k * 0.35);
         }
         // the aura: a glow wrapping the card, plus orbiting wisps that tighten as it pours in
-        p.glow(0, 0, 8 + 3 * a, VIO[1], 0.32 * a);
-        p.glow(0, 0, 3, WHITE, 0.14 * a);
+        p.glow(0, 0, 8 + 3 * a, VIO[1], 0.3 * a);
+        p.glow(0, 0, 3, WHITE, 0.12 * a);
         const orbit = hold > 0 ? 9 - 4 * a : 8 + Math.sin(t * 9) * 1.4;
         for (let i = 0; i < 5; i++) {
           const th = t * 7 + (i / 5) * TAU, x = Math.cos(th) * orbit, y = Math.sin(th) * orbit * 0.62;
           p.dot(x, y, VIO[i % 3], 0.75 * a);
           p.dot(x * 0.82, y * 0.82, VIO[i % 3], 0.3 * a);
         }
-        // the card itself: spinning about its vertical axis, so the width pulses 5-3-1-3 as the face turns
-        const ph = t * spin, face = Math.abs(Math.cos(ph)), w = Math.max(1, Math.round(CARD.w * face / 2) * 2 - 1), h = CARD.h, W = C[6], edge = C[2], pip = C[4];
-        for (let yy = -h / 2; yy < h / 2; yy++)
-          for (let xx = -w / 2; xx <= w / 2; xx++) {
-            const border = Math.abs(xx) > w / 2 - (w > 2 ? 1.6 : 0.6) || Math.abs(yy) > h / 2 - 1.1;
-            p.dot(xx, yy, border ? edge : W, 1);
-          }
-        if (w >= 3) { // the ace of diamonds: a purple pip, proud on the face
-          for (let d = 0; d <= 2; d++) {
-            p.dot(d, -d + 1, pip, 1); p.dot(-d, -d + 1, pip, 1);
-            p.dot(d, d - 1, pip, 1); p.dot(-d, d - 1, pip, 1);
-          }
-          p.dot(0, 1, VIO[2], 1); // its shine
+        // the card body. Held: upright, face-on, the patterned back plain to see. Flying: flat, a horizontal
+        // card wobbling through its tumble — face, then edge-on, face again — like a thrown frisbee from the side
+        if (hold > 0) {
+          const w = Math.round(5 * Math.abs(Math.cos(t * spin))) * 2 - 1; // 9..3..1 as the slow spin turns it
+          const top = -6, bot = 6;
+          for (let y = top; y <= bot; y++)
+            for (let x = -(w - 1) / 2; x <= (w - 1) / 2; x++) {
+              const border = Math.abs(x) > (w - 1) / 2 - 1 || y === top || y === bot;
+              const back = !border && Math.abs(x) <= (y === 0 ? 2 : 1); // the white diamond of the card's pattern
+              p.dot(x, y, border ? EDGE : back ? PAPER : RED, 1);
+            }
+        } else {
+          const face = Math.abs(Math.cos(t * spin + 0.5)) > 0.62; // tumbling: face, edge, face...
+          for (let y = face ? -1 : 0; y <= (face ? 1 : 0); y++)
+            for (let x = -5; x <= 5; x++) {
+              const border = face && (y !== 0 || Math.abs(x) > 3.6);
+              p.dot(x, y, border ? EDGE : face && y === 0 && Math.abs(x) < 2 ? RED : PAPER, 1);
+            }
         }
       },
     };
@@ -112,11 +119,10 @@ export const act = {
 };
 
 export const create = chain([
-  // the beginning: cards out, the thumbing and the infusion, aura pouring into it while it hangs in his fingers
-  { fx: spinCard, t: 0.08, until: THROW, x: 10, y: CY - 4, hold: THROW - 0.08, spin: 5 },
-  // the middle: flicked. It flies flat and fast, spinning hard, shedding violet light
-  { fx: spinCard, t: THROW, until: HIT, x: (t) => 16 + (t - THROW) * SPEED, y: (t) => CY - 2 - 14 * Math.sin(((t - THROW) / FLY) * Math.PI), spin: 26 },
-  // the end: it touches straw and the charge goes off — a plasma burst, not a magical flourish. The palette is
-  // the aura's own ramp (reset to the arcane blues, with the violets kept for the accented shells and arcs)
+  // the beginning: the thumbing and the infusion — the dealt face shows while the aura pours in
+  { fx: spinCard, t: 0.08, until: THROW, x: 10, y: CY - 5, hold: THROW - 0.08, spin: 2.2 },
+  // the middle: flicked flat. It flies level, spinning frisbee-style, blank now, ringed in violet particles
+  { fx: spinCard, t: THROW, until: HIT, x: (t) => 16 + (t - THROW) * SPEED, y: CY - 5, spin: 14 },
+  // the end: it touches straw and the charge goes off — a plasma burst, not a magical flourish
   { fx: blast, t: HIT, x: TX - 4, y: -50 },
 ]);
