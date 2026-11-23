@@ -107,16 +107,19 @@ const DUMMY = new Uint32Array(TW * TH);
 export const SKINS = { flash: [TP.white, 1], char: [hex("#1a0c0e"), 0.72], ice: [hex("#a8e8ff"), 0.72], shadow: [hex("#3a1a70"), 0.5], holy: [hex("#fff4c0"), 0.5], red: [hex("#ff2040"), 0.45], shock: [hex("#8fd6ff"), 0.6], poison: [hex("#58c43a"), 0.5] };
 const STRAW = [TP.strawL, TP.straw, TP.straw, TP.burlapD, TP.burlapD];
 
-/** A straw target on a spring: it sways, flashes, takes a skin, shivers and sheds straw. (x, y): the floor under it, local space. */
+/** A straw target on a spring: it sways, flashes, takes a skin, shivers and sheds straw, and a hit with `to` glides it
+ * to a new spot (the pose track's "out" easing, over `glide` s). (x, y): the floor under it, local space. */
 export class Target {
   constructor(x, seed = 5) {
     Object.assign(this, { x, theta: 0, omega: 0, flashT: 0, skin: null, skinFade: 0, shiver: 0, clock: 0, R: new Rng(seed), straw: [] });
   }
-  hit({ push = 1.2, straw = 8, flash = 0.05, skin, shiver = 0, y = -26 } = {}) {
+  hit({ push = 1.2, straw = 8, flash = 0.05, skin, shiver = 0, y = -26, to, glide = 0.3 } = {}) {
     this.omega += push;
     this.flashT = Math.max(this.flashT, flash);
     if (skin !== undefined) this.skin = skin;
     if (shiver) this.shiver = shiver;
+    // to a new spot: it glides there on the pose track's "out" easing, and where it lands tips like any hit does
+    if (to !== undefined) { this.gFrom = this.x; this.gTo = to; this.gT = 0; this.gDur = glide; }
     const R = this.R;
     for (let k = 0; k < straw; k++) {
       const back = R.next() < 0.3;
@@ -125,6 +128,12 @@ export class Target {
   }
   step(dt) {
     this.clock += dt;
+    if (this.gDur) {
+      this.gT += dt;
+      const u = Math.min(1, this.gT / this.gDur), e = 1 - (1 - u) * (1 - u); // the pose track's "out"
+      this.x = this.gFrom + (this.gTo - this.gFrom) * e;
+      if (u >= 1) { this.x = this.gTo; this.gDur = 0; }
+    }
     this.omega += (-60 * this.theta - 3.4 * this.omega) * dt;
     this.theta = clamp(this.theta + this.omega * dt, -0.4, 0.42);
     if (this.flashT > 0) this.flashT -= dt;
@@ -146,7 +155,7 @@ export class Target {
       for (let x = 0; x < TW; x++) {
         const c = DUMMY[r * TW + x];
         if (!c) continue;
-        const px = base + (flip ? -(x - 19 + o) - 1 : x - 19 + o), py = Y - TH + r;
+        const px = Math.round(base + (flip ? -(x - 19 + o) - 1 : x - 19 + o)), py = Y - TH + r;
         if (px >= 0 && py >= 0 && px < W && py < H) C[py * W + px] = sk ? mix(c, sk[0], sk[1]) : c;
       }
     }
@@ -460,7 +469,7 @@ export function actTiming(mod) {
     recovery: mod.meta?.loop ? 0 : Math.max(0, to - D),
     onBody: !!a.onBody,
     targets: (a.targets ?? (a.target ? [a.target] : [])).map((g) => g.x ?? 66),
-    hits: (a.hits ?? []).map((h) => ({ t: h.t, freeze: h.stop ?? 0, shake: h.shake ?? 0, amp: h.amp ?? 0, push: h.target === false ? 0 : h.push ?? 1.2, skin: h.skin, at: h.at })),
+    hits: (a.hits ?? []).map((h) => ({ t: h.t, freeze: h.stop ?? 0, shake: h.shake ?? 0, amp: h.amp ?? 0, push: h.target === false ? 0 : h.push ?? 1.2, skin: h.skin, at: h.at, to: h.to, glide: h.glide })),
     poses: (a.poses ?? []).map(([t, pose, how]) => ({ t, how: how ?? "smooth", pose })),
   };
 }

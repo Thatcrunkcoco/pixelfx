@@ -1,6 +1,6 @@
 # Catalog
 
-245 effects in 22 categories. Every one is a file in
+246 effects in 22 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## moves
@@ -28,6 +28,7 @@ sliding, dashing, jumping, rolling: the basics of getting around.
 
 | effect | id | | size | what it does |
 |---|---|---|---|---|
+| Boogie woogie | `movement/boogie-woogie` | loop 2.3s | 172×70 | He claps his hands, and in a streak of light he and the training dummy trade places; he claps again and they swap back. |
 | Slide | `movement/slide` | one-shot 1.62s | 372×116 | He coils, throws himself flat and skids on his trailing boot: the ground tears past in streaks, dust sprays back in a wedge, and the skid leaves scuffs he climbs out of. |
 
 ## fire
