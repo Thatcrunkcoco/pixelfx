@@ -66,7 +66,7 @@ class Player {
   }
   tick(dt) {
     const m = this.fx.meta, step = 1 / m.fps;
-    if (this.playing) this.acc = Math.min(this.acc + dt * this.speed, 0.25);
+    if (this.playing && !this.scrubbing) this.acc = Math.min(this.acc + dt * this.speed, 0.25);
     let moved = false;
     while (this.acc >= step) {
       this.acc -= step;
@@ -77,6 +77,31 @@ class Player {
       moved = true;
     }
     if (moved || this.dirty) this.render();
+  }
+  /** How many frames the effect is drawn in: the same count its sprite sheet has. */
+  get frameCount() {
+    const m = this.fx.meta;
+    return Math.max(1, Math.round(m.duration * m.fps) + (m.loop ? 0 : 1));
+  }
+  /**
+   * Show the frame at index i and hold it there. Scrubbing replaces stepping one 1/fps at a time, because a
+   * simulated effect can't be seeked: it is replayed from the start, which is exact and costs a moment.
+   */
+  scrubTo(i) {
+    const m = this.fx.meta, n = this.frameCount, k = Math.max(0, Math.min(n - 1, i));
+    this.scrubbing = true;
+    this.frameIndex = k;
+    this.restart();
+    if (k) this.inst.update(k / m.fps);
+    this.acc = 0;
+    this.render();
+    return k;
+  }
+  /** Back to playing from where the scrubber left off. */
+  release() {
+    if (!this.scrubbing) return;
+    this.scrubbing = false;
+    this.acc = 0;
   }
   seek(t) {
     this.restart();
@@ -185,6 +210,84 @@ function filter() {
 
 // ---- detail
 let detail = null;
+// the effect as it is at a commit, for side-by-side: ?against=<hash> (or a branch or tag)
+const AGAINST = new URLSearchParams(location.search).get("against");
+
+/**
+ * A frame scrubber and single-frame steps over the effect currently in the detail view. Scrubbing freezes both
+ * panes and replays to the same frame, so two versions can be compared frame for frame.
+ */
+function wireScrub() {
+  const range = $("#d-scrub"), out = $("#d-frame"), prev = $("#d-prev"), next = $("#d-next");
+  const players = () => [detail, againstPlayer].filter((p) => p);
+  const n = detail.frameCount;
+  range.max = String(n - 1);
+  range.value = "0";
+  const show = (i) => {
+    const k = Math.max(0, Math.min(n - 1, i));
+    range.value = String(k);
+    out.textContent = `${k} / ${n - 1} · ${(k / detail.fx.meta.fps).toFixed(2)}s`;
+    for (const p of players()) p.scrubTo(Math.min(k, p.frameCount - 1));
+    $("#d-play").textContent = "play";
+    $("#d-play").setAttribute("aria-pressed", "false");
+    for (const p of players()) p.playing = false;
+    return k;
+  };
+  range.oninput = () => show(+range.value);
+  prev.onclick = () => show(+range.value - 1);
+  next.onclick = () => show(+range.value + 1);
+  out.textContent = `0 / ${n - 1} · 0.00s`;
+  // exposed so the play button and a new effect both start cleanly from a scrubbed frame
+  scrub = { show, players };
+}
+let scrub = null;
+
+/**
+ * The other half of a comparison: the same effect loaded from src/ as it was at AGAINST. Modules come from
+ * /baseline/<hash>/ with their own instance of src/core, so the two graphs never share a module and the panes
+ * really are two different versions.
+ */
+async function loadAgainst(fx) {
+  const url = `/baseline/${encodeURIComponent(AGAINST)}/src/fx/${fx.id}.js`;
+  const mod = await import(url);
+  // the same wrapper the gallery builds for its own effects, with the old commit's meta and defaults filled in
+  const meta = { fps: 30, bg: "dark", loop: false, duration: 1, tags: [], options: {}, ...mod.meta };
+  return { id: fx.id, cat: fx.cat, name: meta.name, mod: { ...mod, meta }, meta };
+}
+
+function openAgainst(fx, screen) {
+  const wrap = $("#d-against-wrap"), err = $("#d-against-err");
+  $("#detail").classList.add("comparing");
+  $("#d-compare-head").hidden = false;
+  $("#d-against-head").hidden = false;
+  $("#d-against-col").hidden = false;
+  $("#d-against-label").textContent = AGAINST;
+  wrap.classList.toggle("screen", screen);
+  const canvas = $("#against");
+  loadAgainst(fx).then((oldFx) => {
+    try {
+      const ax = isScreen(oldFx);
+      canvas.parentElement.classList.toggle("screen", ax);
+      againstPlayer = ax ? new Player(canvas, oldFx, 16 / 9, 1) : new Player(canvas, oldFx, 16 / 10, 1.6);
+      againstPlayer.playing = detail.playing;
+      againstPlayer.speed = detail.speed;
+      if (detail.bg) againstPlayer.setBg(detail.bg);
+      againstPlayer.render();
+      // the two halves may not be the same length: say so rather than silently comparing frame 18 to frame 18
+      if (againstPlayer.frameCount !== detail.frameCount) {
+        $("#d-frame").textContent += ` (that version: ${againstPlayer.frameCount} frames)`;
+      }
+    } catch (e) {
+      err.hidden = false;
+      err.textContent = `this effect at ${AGAINST} can't be drawn here: ${e.message}`;
+    }
+  }).catch((e) => {
+    err.hidden = false;
+    err.textContent = `${AGAINST} doesn't have this effect at that path: ${e.message}`;
+  });
+}
+let againstPlayer = null;
+
 function openDetail(fx) {
   const d = $("#detail");
   const big = $("#big"), screen = isScreen(fx);
@@ -201,6 +304,7 @@ function openDetail(fx) {
   // controls
   $("#d-bg").replaceChildren(...BACKDROPS.concat("none").map((b) => btn(b, () => detail.setBg(b), b === m.bg, "bg")));
   $("#d-speed").replaceChildren(...[0.25, 0.5, 1].map((s) => btn(`${s}×`, () => (detail.speed = s), s === 1, "speed")));
+  wireScrub();
   const pal = $("#d-pal");
   pal.replaceChildren(el("option", { value: "", textContent: "its own" }), ...Object.keys(PAL).map((k) => el("option", { value: k, textContent: k })));
   pal.value = "";
@@ -211,6 +315,13 @@ function openDetail(fx) {
   $("#d-play").textContent = "pause";
   $("#d-sheet").replaceChildren();
   code(fx);
+  againstPlayer = null;
+  $("#detail").classList.remove("comparing");
+  $("#d-compare-head").hidden = true;
+  $("#d-against-head").hidden = true;
+  $("#d-against-col").hidden = true;
+  $("#d-big-wrap").classList.remove("screen");
+  if (AGAINST) openAgainst(fx, screen);
   d.showModal();
   d.scrollTop = 0;
 }
@@ -273,9 +384,15 @@ function wireDetail() {
   d.addEventListener("close", () => (detail = null));
   d.addEventListener("click", (e) => e.target === d && d.close());
   $("#d-play").addEventListener("click", (e) => {
-    detail.playing = !detail.playing;
-    e.target.setAttribute("aria-pressed", String(detail.playing));
-    e.target.textContent = detail.playing ? "pause" : "play";
+    const on = !detail.playing;
+    // both halves of a comparison run or pause together, leaving any scrubbed frame behind
+    for (const p of [detail, againstPlayer].filter(Boolean)) {
+      p.release();
+      p.playing = on;
+      p.restart();
+    }
+    e.target.setAttribute("aria-pressed", String(on));
+    e.target.textContent = on ? "pause" : "play";
   });
   $("#d-again").addEventListener("click", () => detail.restart());
   $("#d-flip").addEventListener("click", (e) => {
@@ -320,7 +437,8 @@ let last = performance.now();
 function frameLoop(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  if (detail) detail.tick(dt);
+  // both halves of a comparison are stepped from this one clock, so they can never drift apart by a frame
+  if (detail) { detail.tick(dt); if (againstPlayer) againstPlayer.tick(dt); }
   else for (const t of tiles) if (t.visible && t.player && !t.fig.hidden && (!reduced || t.hover)) t.player.tick(dt);
   requestAnimationFrame(frameLoop);
 }

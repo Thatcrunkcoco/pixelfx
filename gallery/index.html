@@ -36,8 +36,15 @@
 <p class="empty" id="none" hidden>Nothing matches that. Try fire, slash or loop.</p>
 <dialog class="detail" id="detail" aria-labelledby="d-name">
   <div class="sheet">
-    <div>
-      <div class="big"><canvas id="big"></canvas><button class="close" id="d-close" type="button">close</button></div>
+    <div class="compare-col" id="d-compare-col">
+      <div>
+        <div class="compare-head" id="d-compare-head" hidden><span>current</span></div>
+        <div class="big" id="d-big-wrap"><canvas id="big"></canvas><button class="close" id="d-close" type="button">close</button></div>
+      </div>
+      <div id="d-against-col" hidden>
+        <div class="compare-head against" id="d-against-head" hidden><span id="d-against-label"></span></div>
+        <div class="big against" id="d-against-wrap"><canvas id="against"></canvas><div class="against-err" id="d-against-err" hidden></div></div>
+      </div>
     </div>
     <div class="info">
       <h2 id="d-name"></h2>
@@ -46,6 +53,7 @@
       <dl class="facts" id="d-facts"></dl>
       <div class="controls">
         <div class="row"><label>play</label><button class="btn" id="d-play" type="button">pause</button><button class="btn" id="d-again" type="button">again</button><span id="d-speed" class="row"></span></div>
+        <div class="row"><label>frame</label><button class="btn stepb" id="d-prev" type="button" aria-label="previous frame">‹</button><input class="scrub" id="d-scrub" type="range" min="0" max="1" step="1" value="0" aria-label="Frame"><button class="btn stepb" id="d-next" type="button" aria-label="next frame">›</button><output id="d-frame" class="frame-count"></output></div>
         <div class="row"><label>backdrop</label><span id="d-bg" class="row"></span></div>
         <div class="row"><label>palette</label><select class="btn" id="d-pal" aria-label="Palette"></select><button class="btn" id="d-seed" type="button">new seed</button></div>
         <div class="row"><label>show</label><button class="btn" id="d-flip" type="button">mirror</button><button class="btn" id="d-actor" type="button">character</button><button class="btn" id="d-make" type="button">sprite sheet</button></div>

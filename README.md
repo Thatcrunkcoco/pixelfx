@@ -181,6 +181,18 @@ Then go round: look at the contact sheet, fix the worst thing, render again. `--
 bugs don't show in samples. [docs/AUTHORING.md](docs/AUTHORING.md) has the contract, the drawing API and the quality
 bar. `node tools/serve.mjs` runs the gallery locally with your effects in it.
 
+The gallery is the best way to *watch* an effect: it runs the real code at your display's rate, which is what a game
+does, where a GIF is a lossy snapshot of it. Open one and the **frame** row scrubs to any frame and steps one at a
+time, so a bad in-between is a five-second check. To see a change beside the version it came from, pass a commit:
+
+```
+node tools/serve.mjs
+open http://localhost:8080/gallery/?against=a841596
+```
+
+The left pane is your working tree, the right is that commit's `src/`, and both run from one clock. Nothing is
+checked out or stashed: the server reads the old files out of git. Use any commit hash, branch or tag.
+
 ## publish it on patch.
 
 Made a browser game with these? Put it on [Patch](https://patch.gg), where people play and remix browser games and

@@ -141,6 +141,24 @@ main { max-width: 1240px; margin: 0 auto; }
   align-content: start;
 }
 .sheet .big { background: var(--stage); aspect-ratio: 16 / 10; position: relative; }
+/* A/B: the two stages sit side by side, each labelled, sharing one clock */
+.sheet .compare-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+/* when comparing, the compare column spans the whole width and the info moves below it */
+.sheet.comparing { grid-template-columns: minmax(0, 1fr); }
+.sheet.comparing .compare-col { grid-column: 1 / -1; }
+.sheet.comparing .info { max-width: 720px; }
+@media (max-width: 860px) {
+  .sheet .compare-col { grid-template-columns: 1fr; }
+}
+.sheet .compare-col > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.compare-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.compare-head span { font: 400 12px/1 var(--mono); color: var(--quiet); letter-spacing: 0.04em; }
+.compare-head span:last-child { text-align: right; color: #f53cd1; }
+.sheet .big.against { margin-top: 0; }
+.against-err { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; font: 400 12px/1.6 var(--mono); color: var(--quiet); }
+.scrub { flex: 1; min-width: 60px; accent-color: #f53cd1; }
+.frame-count { font: 400 11px/1 var(--mono); color: var(--quiet); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stepb { padding: 2px 8px; }
 .close {
   position: absolute;
   top: 10px;
