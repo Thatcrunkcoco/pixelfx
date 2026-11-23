@@ -6,15 +6,16 @@
 import { Rng, clamp, fit, mix, hex, lerp, READY, poseAt, posed, createFrame, painterFor } from "../../core/index.js";
 import { create as impactCreate } from "../impacts/impact-frame.js";
 
-const CLAP1 = 0.24, SNAP1 = 0.3, CLAP2 = 1.24, SNAP2 = 1.3, D = 2.3, TRAVEL = 66, HEAD = -24;
+const CLAP1 = 0.24, SNAP1 = 0.3, CLAP2 = 1.24, SNAP2 = 1.3, D = 2.3, TRAVEL = 200, HEAD = -24;
 const TELE = 1 / 60; // the teleport lives inside one 30 fps frame, hidden by the impact's white
+const BLOW = 2; // the impact frame reads at twice its own pixel size, so the burst fills the room
 
 export const meta = {
   name: "Boogie woogie",
   desc: "He claps his hands, an impact frame snaps the room white, and he and the training dummy have traded places; he claps again and they snap back.",
   tags: ["movement", "swap", "teleport", "clap", "impact", "boogie", "loop"],
-  size: [172, 70],
-  origin: [60, 58],
+  size: [320, 70],
+  origin: [72, 58],
   duration: D,
   loop: true,
   fps: 30,
@@ -33,7 +34,7 @@ const CLAP = { crouch: 5, lean: 10, fx: 13, fy: -25, bx: 11, by: -22 };
 const CATCH = { crouch: 9, lean: -3, fx: 10, fy: -18, bx: -8, by: -16, ffx: 8, ffy: -3, fbx: -13, fby: -4 };
 
 export const act = {
-  target: { x: 66 },
+  target: { x: TRAVEL },
   hits: [
     { t: CLAP1, stop: 0.06, shake: 0.14, amp: 1.6, target: false },
     { t: SNAP1, to: 0, glide: 0.02, push: 0, straw: 0, flash: 0 },
@@ -57,8 +58,8 @@ export const act = {
     [0.44, { ...CATCH, x: TRAVEL }],
     [0.62, { ...READY, x: TRAVEL }],
     // the settled idle: one key far enough above the next that he breathes while he waits
-    [1.12, ANTIC],
-    [CLAP2, CLAP],
+    [1.12, { ...ANTIC, x: TRAVEL }],
+    [CLAP2, { ...CLAP, x: TRAVEL }],
     [SNAP2, { ...CLAP, x: TRAVEL }, "snap"],
     [SNAP2 + TELE, { ...CATCH, x: 0 }],
     [1.44, { ...CATCH, x: 0 }],
@@ -95,11 +96,12 @@ export function create(o) {
     const cyc = Math.floor(t / D), key = cyc * 100 + mark;
     if (!fired.includes(key) && t % D >= mark) { fired.push(key); fn(); }
   };
-  // a fresh impact frame each clap, so its 8 beats land exactly on this snap; centered where he clapped
+  // a fresh impact frame each clap, so its 8 beats land exactly on this snap; centered on him, where he stands.
+  // flashAt is where the mask's centre lands in the scratch's own (blown-up) pixels
   const fireFlash = (mark) => {
     flash = impactCreate({ palette: ["#0c0a14", "#f4efe4", "#f4efe4"], lines: 44, seed: R.int(1, 9) });
     flashBorn = t;
-    flashAt = [OX + heroAt(mark) + 12, OY + HEAD];
+    flashAt = [Math.round((OX + heroAt(mark)) / BLOW), Math.round((OY - 26) / BLOW)];
   };
   // the clap: a ring and sparks from the hands. Fires as the freeze lifts, so it blooms as the flash resolves
   const clapAt = (mark) => {
@@ -199,15 +201,17 @@ export function create(o) {
         }
       }
       // the impact frame: two frames of white with a burst, two inverted, then lines pulling out past the edges.
-      // Rendered on a canvas-sized scratch, blitted in local coordinates, so it covers exactly our canvas.
+      // Rendered on a canvas-sized scratch and blitted at twice its pixel size, in local coordinates, so the
+      // burst reads over the whole width of the room; the mask is full-bleed, so the screen fully turns.
       if (flash) {
         buf.color.fill(0);
         bp.reset().place(flashAt[0], flashAt[1]);
         flash.draw(bp);
-        for (let by = 0; by < H; by++)
-          for (let bx = 0; bx < W; bx++) {
+        const bw = Math.ceil(W / BLOW), bh = Math.ceil(H / BLOW);
+        for (let by = 0; by < bh; by++)
+          for (let bx = 0; bx < bw; bx++) {
             const c = buf.color[by * W + bx];
-            if (c) p.dot(bx - OX, by - OY, c, 1);
+            if (c) p.rect(bx * BLOW - OX, by * BLOW - OY, BLOW, BLOW, c, 1);
           }
       }
     },
