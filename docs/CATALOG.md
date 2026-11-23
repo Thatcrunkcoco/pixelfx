@@ -28,7 +28,7 @@ sliding, dashing, jumping, rolling: the basics of getting around.
 
 | effect | id | | size | what it does |
 |---|---|---|---|---|
-| Boogie woogie | `movement/boogie-woogie` | loop 2.3s | 320×70 | He claps his hands, an impact frame snaps the room white, and he and the training dummy have traded places; he claps again and they snap back. |
+| Boogie woogie | `movement/boogie-woogie` | loop 2.3s | 320×190 | He claps his hands, an impact frame snaps the room white, and he and the training dummy have traded places; he claps again and they snap back. |
 | Slide | `movement/slide` | one-shot 1.62s | 372×116 | He coils, throws himself flat and skids on his trailing boot: the ground tears past in streaks, dust sprays back in a wedge, and the skid leaves scuffs he climbs out of. |
 
 ## fire

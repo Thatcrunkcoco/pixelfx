@@ -14,8 +14,8 @@ export const meta = {
   name: "Boogie woogie",
   desc: "He claps his hands, an impact frame snaps the room white, and he and the training dummy have traded places; he claps again and they snap back.",
   tags: ["movement", "swap", "teleport", "clap", "impact", "boogie", "loop"],
-  size: [320, 70],
-  origin: [72, 58],
+  size: [320, 190],
+  origin: [72, 178], // the act happens in the bottom band; the room above is canvas too, so the flash fills it
   duration: D,
   loop: true,
   fps: 30,
