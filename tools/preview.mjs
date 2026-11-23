@@ -138,7 +138,7 @@ async function main() {
   for (const f of spawnSync("git", ["ls-files", "-co", "--exclude-standard", "src", "gallery"], { cwd: ROOT, encoding: "utf8" }).stdout.split("\n").filter(Boolean).sort()) {
     srcHash.update(f).update(gitShow("HEAD", f) ?? "").update(await readFile(join(ROOT, f), "utf8").catch(() => ""));
   }
-  const stamp = { built: new Date().toISOString(), hash: srcHash.digest("hex").slice(0, 8), against: baselineHash?.slice(0, 8) ?? null };
+  const stamp = { built: new Date().toISOString(), hash: srcHash.digest("hex").slice(0, 8), against: baselineHash?.slice(0, 8) ?? null, ref: AGAINST ?? null };
 
   // inline the stylesheet where the local <link> was, drop every remote font link, drop the module <script> (the
   // bundle below replaces it), and add the bundle

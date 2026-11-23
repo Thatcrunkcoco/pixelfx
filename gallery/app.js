@@ -134,6 +134,13 @@ const tiles = [];
 const sections = [];
 function build() {
   $("#count").textContent = FX.length;
+  // say up front that every effect opens beside an older one, so the comparison isn't a surprise
+  if (AGAINST) {
+    const note = $("#cmp-note");
+    note.hidden = false;
+    note.textContent = `  Comparing every effect with ${AGAINST.slice(0, 8)}.`;
+    note.title = `Open an effect to see it beside ${AGAINST}`;
+  }
   const main = $("#grid");
   for (const c of categories) {
     const list = FX.filter((f) => f.cat === c.id);
@@ -210,8 +217,9 @@ function filter() {
 
 // ---- detail
 let detail = null;
-// the effect as it is at a commit, for side-by-side: ?against=<hash> (or a branch or tag)
-const AGAINST = new URLSearchParams(location.search).get("against");
+// the effect as it is at a commit, for side-by-side: ?against=<hash> (or a branch or tag). A preview built with
+// --against has no query string when opened from disk, so it falls back to the ref the build recorded.
+const AGAINST = new URLSearchParams(location.search).get("against") ?? globalThis.PIXELFX_BUILD?.ref ?? null;
 
 /**
  * A frame scrubber and single-frame steps over the effect currently in the detail view. Scrubbing freezes both
