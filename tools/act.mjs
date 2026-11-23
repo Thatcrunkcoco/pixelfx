@@ -4,16 +4,18 @@
 //
 //   node tools/act.mjs melee/sword-slash                strip: records/act/melee-sword-slash.png
 //   node tools/act.mjs melee/sword-slash --mp4          video: records/act/melee-sword-slash.mp4
+//   node tools/act.mjs melee/sword-slash --gif          animated GIF: records/act/melee-sword-slash.gif
 //   node tools/act.mjs melee/sword-slash --sheet        the whole act, character and all, as a transparent sprite sheet
 //
 // Options: --from S --to S (strip range) --step S (default 1/12) --cols N --zoom N --bg KIND --out FILE --no-target --seconds S
+// (GIF and video render the full act; --fps N slows the GIF down, and --loops N repeats a loop in the video)
 
 import { join } from "node:path";
 import { ROOT, resolveIds, loadEffect, renderAct, spriteSheet, canvas, upscale, save, writeVideo } from "./lib/fxlib.mjs";
 
 const args = process.argv.slice(2), flags = {}, pos = [];
 for (let i = 0; i < args.length; i++) {
-  if (["--mp4", "--no-target", "--sheet"].includes(args[i])) flags[args[i].slice(2)] = true;
+  if (["--mp4", "--gif", "--no-target", "--sheet"].includes(args[i])) flags[args[i].slice(2)] = true;
   else if (args[i].startsWith("--")) flags[args[i].slice(2)] = args[++i];
   else pos.push(args[i]);
 }
@@ -31,11 +33,16 @@ for (const id of ids) {
   }
   const r = renderAct(fx, { fps: 60, bg: flags.bg, target: !flags["no-target"], seconds: flags.seconds ? +flags.seconds : undefined });
   const base = join(ROOT, "records", "act", id.replace("/", "-"));
-  if (flags.mp4) {
+  if (flags.mp4 || flags.gif) {
     const k = +(flags.zoom ?? Math.max(2, Math.min(8, Math.floor(960 / Math.max(r.w, r.h)))));
-    const file = flags.out ?? base + ".mp4";
-    writeVideo(file, r, k);
-    console.log(`${id}  ${r.frames.length} frames  ${(r.frames.length / r.fps).toFixed(2)} s  ->  ${file}`);
+    const file = flags.out ?? base + (flags.gif ? ".gif" : ".mp4");
+    let shown = r;
+    if (flags.gif) {
+      // a 60 fps GIF is enormous for no gain: half the frames unless the caller asked for more
+      shown = await renderAct(fx, { fps: flags.fps ? +flags.fps : 30, bg: flags.bg, target: !flags["no-target"], seconds: flags.seconds ? +flags.seconds : undefined });
+      writeVideo(file, shown, k, { loops: flags.loops ? +flags.loops : 2 });
+    } else writeVideo(file, r, k);
+    console.log(`${id}  ${shown.frames.length} frames  ${(shown.frames.length / shown.fps).toFixed(2)} s  ->  ${file}`);
   } else {
     const from = +(flags.from ?? r.frames[0].t), to = +(flags.to ?? r.frames[r.frames.length - 1].t), step = +(flags.step ?? 1 / 12), list = [];
     let held = 0;
